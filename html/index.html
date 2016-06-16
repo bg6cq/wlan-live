@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<style type="text/css">
+		body, html{width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+		#allmap {height:100%; width: 100%;}
+		#menu {position: fixed; background-color:blue; left: 10px; bottom: 30px; color: white}
+	</style>
+	<title>WLAN实时数据</title>
+</head>
+<body>
+<div id="allmap"></div>
+<div id=menu>
+</div>
+
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=7RuEGPr12yqyg11XVR9Uz7NI"></script>
+<script src="/socket.io/socket.io.js"></script>
+//var lou = new Array();
+//  lou[1]='name'
+//  lat[1]=x
+//  lon[1]=y
+<script type="text/javascript" src="http://linux.ustc.edu.cn/ap/ap-wlan.php"></script>
+
+<script>
+
+
+var cs = [ '|', '/', '-', '|', '\\' ];
+
+var markers = {};
+var clients = {};
+var ci = {}
+
+
+// 百度地图API功能
+var map = new BMap.Map("allmap");
+map.enableScrollWheelZoom();
+
+var top_left_control = new BMap.ScaleControl({anchor: BMAP_ANCHOR_TOP_LEFT});// 左上角，添加比例尺
+var top_left_navigation = new BMap.NavigationControl();  //左上角，添加默认缩放平移控件
+	
+//添加控件和比例尺
+map.addControl(top_left_control);        
+map.addControl(top_left_navigation);     
+map.addControl(new BMap.MapTypeControl());
+
+map.centerAndZoom(new BMap.Point(117.27336492153,31.843459184271),17);
+
+for( i in lou ) {
+//	alert(i+' '+lou[i]+' '+lat[i]+' '+lon[i]);
+     	var icon = new BMap.Icon("http://linux.ustc.edu.cn/ap/green.png", new BMap.Size(24, 32), {anchor: new BMap.Size(12, 16)});
+        var marker = new BMap.Marker(new BMap.Point(lon[i],lat[i]), {icon: icon});
+        var lb = new BMap.Label(' ', {offset: new BMap.Size(20,0)});
+        lb.setStyle({border:0, background: "#eeeeee"});
+        marker.setLabel(lb);
+        map.addOverlay(marker);
+	markers[i]=marker;
+	clients[i]=0;
+	ci[i]=0;
+}
+
+var socket = io();
+socket.on('wifi', function(obj){
+	var lou = apidlou[obj.apid];
+	if(markers.hasOwnProperty(lou)) {   // lou已经存在
+		if(obj.state=='J')   // new user join
+			clients[lou]++;
+		else if(obj.state=='D')  // user leave
+			if(clients[lou]>0)
+				clients[obj]--;
+		ci[lou]++;
+		if( ci[lou] == 5 ) 
+			ci[lou]=0;
+		var lb = new BMap.Label( clients[lou], {offset: new BMap.Size(20,0)});
+		lb.setStyle({border:0, background: "#eeeeee"});
+		markers[lou].setLabel(lb);
+		markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
+			setTimeout(
+				function(){
+				markers[lou].setAnimation(null);
+				}, 
+				500);
+	}
+});
+
+
+</script>
+</body>
+</html>
