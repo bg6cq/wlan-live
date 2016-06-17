@@ -8,7 +8,7 @@
 		#allmap {height:100%; width: 100%;}
 		#menu {position: fixed; background-color:blue; left: 10px; bottom: 30px; color: white}
 	</style>
-	<title>WLAN实时数据</title>
+	<title>WLAN用户统计</title>
 </head>
 <body>
 <div id="allmap"></div>
@@ -16,7 +16,11 @@
 </div>
 
 <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=7RuEGPr12yqyg11XVR9Uz7NI"></script>
-<script src="/socket.io/socket.io.js"></script>
+<script src="http://202.141.176.2:4000/socket.io/socket.io.js"></script>
+<script>
+var markers = {};
+</script>
+
 //var lou = new Array(); 楼的信息，下标是楼编号
 //var lat = new Array();
 //var lon = new Array();
@@ -29,8 +33,6 @@
 <script type="text/javascript" src="http://linux.ustc.edu.cn/ap/ap-wlan.php"></script>
 
 <script>
-var markers = {};
-var clients = {};
 
 // 百度地图API功能
 var map = new BMap.Map("allmap");
@@ -50,27 +52,36 @@ for( i in lou ) {
 //	alert(i+' '+lou[i]+' '+lat[i]+' '+lon[i]);
      	var icon = new BMap.Icon("http://linux.ustc.edu.cn/ap/green.png", new BMap.Size(24, 32), {anchor: new BMap.Size(12, 16)});
         var marker = new BMap.Marker(new BMap.Point(lon[i],lat[i]), {icon: icon});
-        var lb = new BMap.Label(' ', {offset: new BMap.Size(20,0)});
+        var lb = new BMap.Label(clients[i], {offset: new BMap.Size(20,0)});
         lb.setStyle({border:0, background: "#eeeeee"});
         marker.setLabel(lb);
         map.addOverlay(marker);
 	markers[i]=marker;
-	clients[i]=0;
 }
 
-var socket = io();
+var socket = io("http://202.141.176.2:4000/");
 socket.on('wifi', function(obj){
 	var lou = apidlou[obj.apid];
 	if(markers.hasOwnProperty(lou)) {   // lou已经存在
-		if(obj.state=='J')   // new user join
-			clients[lou]++;
-		else if(obj.state=='D')  // user leave
+		if(obj.state=='J') {  // new user join
+			clients[lou]++;	
+			ssids[obj.ssid]++;
+		} else if(obj.state=='L') { // user leave
 			if(clients[lou]>0)
 				clients[lou]--;
+			if(ssids[obj.ssid]>0)
+				ssids[obj.ssid]--;
+		}
 		var lb = markers[lou].getLabel();
 		lb.setContent(clients[lou]);
-		//markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
-		//setTimeout( function(){ markers[lou].setAnimation(null); }, 500);
+		markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
+		setTimeout( function(){ markers[lou].setAnimation(null); }, 500);
+		document.getElementById("menu").innerHTML = 
+			"ustcnet:"+ssids['ustcnet']+
+			" eduroam:"+ssids['eduroam']+
+			" ustc-guest:"+ssids['ustc-guest']+
+			" ChinaNet:"+ssids['ChinaNet']+
+			" CMCC:"+ssids['CMCC-USTC'];
 	}
 });
 
