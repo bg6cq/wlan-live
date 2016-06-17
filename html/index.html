@@ -24,14 +24,8 @@
 <script type="text/javascript" src="http://linux.ustc.edu.cn/ap/ap-wlan.php"></script>
 
 <script>
-
-
-var cs = [ '|', '/', '-', '|', '\\' ];
-
 var markers = {};
 var clients = {};
-var ci = {}
-
 
 // 百度地图API功能
 var map = new BMap.Map("allmap");
@@ -57,7 +51,6 @@ for( i in lou ) {
         map.addOverlay(marker);
 	markers[i]=marker;
 	clients[i]=0;
-	ci[i]=0;
 }
 
 var socket = io();
@@ -68,19 +61,11 @@ socket.on('wifi', function(obj){
 			clients[lou]++;
 		else if(obj.state=='D')  // user leave
 			if(clients[lou]>0)
-				clients[obj]--;
-		ci[lou]++;
-		if( ci[lou] == 5 ) 
-			ci[lou]=0;
-		var lb = new BMap.Label( clients[lou], {offset: new BMap.Size(20,0)});
-		lb.setStyle({border:0, background: "#eeeeee"});
-		markers[lou].setLabel(lb);
-		markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
-			setTimeout(
-				function(){
-				markers[lou].setAnimation(null);
-				}, 
-				500);
+				clients[lou]--;
+		var lb = markers[lou].getLabel();
+		lb.setContent(clients[lou]);
+		//markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
+		//setTimeout( function(){ markers[lou].setAnimation(null); }, 500);
 	}
 });
 
