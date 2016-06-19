@@ -151,9 +151,11 @@ socket.on('wifi', function(obj){
 		} else if(obj.state=='L') { // user leave
 			useradd(obj.apid, obj.ssid, -1);
 		}
-		update_lou_disp(lou);
-		markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
-		setTimeout( function(){ markers[lou].setAnimation(null); }, 500);
+		if(disp_ssid=='all' || disp_ssid==obj.ssid) {
+			update_lou_disp(lou);
+			markers[lou].setAnimation(BMAP_ANIMATION_BOUNCE);
+			setTimeout( function(){ markers[lou].setAnimation(null); }, 500);
+		}
 		update_stats();
 	}
 });
